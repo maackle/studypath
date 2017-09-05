@@ -2,6 +2,7 @@ from collections import deque, defaultdict
 from itertools import islice
 import math
 import pickle
+import time
 
 from tqdm import tqdm
 
@@ -15,19 +16,26 @@ EDGEFILE_TOTAL = 208556217
 
 
 def test1(seeds):
+    t0 = time.time()
+
     seedstr = '-'.join(map(str, seeds))
-    V = build_V()
-    print('built vertex map')
     G = build_G()
-    print('built graph structure')
+    print(f'built graph structure in {time.time() - t0}')
 
     x = hkgrow(G, seeds)
+    print(f'completed hkgrow in {time.time() - t0}')
+
+    V = build_V()
+    print(f'built vertex map in {time.time() - t0}')
+
     names = list(
         sorted(((V.get(n), v) for n, v in x), key=lambda x: x[1], reverse=True)
     )
     with open(f'../output/names-{seedstr}.txt', 'w') as f:
         for name, v in names:
             f.write(f'{name}\t{v}\n')
+
+    print(f'wrote list of names in {time.time() - t0}')
     import pudb; pudb.set_trace()
 
 
@@ -105,7 +113,7 @@ def out(G, v):
 def build_G():
     PICKLE_FILENAME='../input/edge-graph.pickle'
     try:
-        with open(PICKLE_FILENAME) as pfile:
+        with open(PICKLE_FILENAME, 'rb') as pfile:
             print("Loading pickled graph...")
             G = pickle.load(pfile)
     except IOError:
@@ -147,4 +155,6 @@ def parse_edgefile(edgefile):
     )
 
 if __name__ == '__main__':
-    test1([25239])
+    # test1([25239])  # astrophysics
+    # test1([29954])  # topology
+    test1([785288090])  # dada
