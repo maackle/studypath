@@ -36,7 +36,7 @@ def write_vertids(vertids, f):
     for title, ident in vertids.items():
         f.write(f'{ident}\t{title}\n')
 
-def write_redirects(vertids, f):
+def write_redirects(redirects, f):
     for title1, title2 in redirects.items():
         f.write(f'{title1}\t{title2}\n')
 
@@ -47,6 +47,14 @@ def read_verts(f):
         if len(pieces) == 2:
             ident, name = pieces
             yield name, ident
+        else:
+            print("bad pieces: ", pieces)
+
+def read_simplified_verts(f):
+    for l in f:
+        pieces = l.strip().split('\t')
+        if len(pieces) == 3:
+            yield pieces
         else:
             print("bad pieces: ", pieces)
 
@@ -163,7 +171,7 @@ infilename = '../dumps/enwiki-20170720-pages-articles.xml'
 def write_verts():
     vertfilename = '../input/verts-raw.txt'
     redirectfilename = '../input/redirects.txt'
-    vert2filename = '../input/verts-simplified.txt'
+    vert2filename = '../input/verts-with-simplified.txt'
 
     def get_verts_and_redirects():
         verts = {}
@@ -206,9 +214,12 @@ def write_verts():
             print(f'Finished in {time.time() - t0}')
         verts = handler.vertids
         redirects = handler.redirects
+    original_idents = list(verts.values())
     simplify_vertids(verts, redirects)
     with open(vert2filename, 'w') as v2:
-        write_vertids(verts, v2)
+        for p, o in zip(verts.items(), original_idents):
+            title, ident = p
+            v2.write(f'{o}\t{ident}\t{title}\n')
 
 
 
@@ -263,7 +274,7 @@ def binary_edges():
 
 
 def make_neo4j_csv():
-    vertfilename = '../input/verts-simplified.txt'
+    vertfilename = '../input/verts-with-simplified.txt'
     edgefilename = '../input/edges-cleaned.txt'
     nodecsvname = '../output/nodes.csv'
     linkcsvname = '../output/links.csv'
@@ -275,10 +286,10 @@ def make_neo4j_csv():
         open(linkcsvname, 'w') as linkcsv:
 
         nodewriter = csv.writer(nodecsv, quotechar="|")
-        nodewriter.writerow(["wpid:ID", "title"])
-        for title, ident in read_verts(vertfile):
+        nodewriter.writerow(["wpid:ID", "canonid", "title"])
+        for triple in read_simplified_verts(vertfile):
             # title = multiquote.sub(r"\'", title)
-            nodewriter.writerow([ident, title])
+            nodewriter.writerow(triple)
 
         linkwriter = csv.writer(linkcsv, quotechar="|")
         linkwriter.writerow([":START_ID", ":END_ID"])
@@ -288,7 +299,7 @@ def make_neo4j_csv():
 
 if __name__ == '__main__':
     with Timer() as t:
-        # write_verts()
+        # write_verts()  # 30 seconds without parsing raw dump
         # write_edges()  # takes about an hour and 20 mins
         # cleanup_edges()  # takes about a minute
         # binary_edges()
