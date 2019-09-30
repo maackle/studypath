@@ -40,7 +40,7 @@
     "rimraf": "^2.5.2",
     "serve": "^5.2.4",
     "webpack": "^2.7.0",
-    "webpack-dev-server": "^2.7.1",
+    "webpack-dev-server": "^3.1.11",
     "webpack-node-externals": "^1.5.4",
     "xhr2": "^0.1.3"
   }
